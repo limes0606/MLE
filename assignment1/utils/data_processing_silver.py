@@ -1,0 +1,85 @@
+"""
+Silver layer processing.
+
+Silver = cleaned, conformed, typed data at the same grain as bronze, with
+malformed/placeholder values fixed or nulled out.
+"""
+import os
+import pyspark.sql.functions as F
+from pyspark.sql.types import DoubleType, IntegerType
+
+
+def _write_silver(df, table_name, snapshot_date, silver_dir):
+    out_dir = os.path.join(silver_dir, table_name)
+    os.makedirs(out_dir, exist_ok=True)
+    out_path = os.path.join(out_dir, f"silver_{table_name}_{snapshot_date.replace('-', '_')}.parquet")
+    df.write.mode("overwrite").parquet(out_path)
+    print(f"[silver] {table_name:12s} {snapshot_date}: {df.count():>6d} rows -> {out_path}")
+    return df
+
+
+def _strip_to_number(colname):
+    return F.regexp_extract(F.col(colname).cast("string"), r"(-?\d+\.?\d*)", 1)
+
+
+def process_silver_attributes(bronze_df, snapshot_date, silver_dir):
+    df = bronze_df
+    df = df.withColumn("Age", _strip_to_number("Age").cast(IntegerType()))
+    df = df.withColumn("Age", F.when((F.col("Age") < 18) | (F.col("Age") > 100), None).otherwise(F.col("Age")))
+    df = df.withColumn(
+        "Occupation",
+        F.when(F.col("Occupation").rlike(r"^[A-Za-z_ ]+$") & (F.col("Occupation") != "_______"), F.col("Occupation")).otherwise(None),
+    )
+    return _write_silver(df, "attributes", snapshot_date, silver_dir)
+
+
+NUMERIC_FINANCIAL_COLS = [
+    "Annual_Income", "Monthly_Inhand_Salary", "Num_Bank_Accounts", "Num_Credit_Card",
+    "Interest_Rate", "Num_of_Loan", "Delay_from_due_date", "Num_of_Delayed_Payment",
+    "Changed_Credit_Limit", "Num_Credit_Inquiries", "Outstanding_Debt",
+    "Credit_Utilization_Ratio", "Total_EMI_per_month", "Amount_invested_monthly",
+    "Monthly_Balance",
+]
+
+
+def process_silver_financials(bronze_df, snapshot_date, silver_dir):
+    df = bronze_df
+    for c in NUMERIC_FINANCIAL_COLS:
+        df = df.withColumn(c, _strip_to_number(c).cast(DoubleType()))
+    df = df.withColumn(
+        "Num_of_Loan",
+        F.when((F.col("Num_of_Loan") < 0) | (F.col("Num_of_Loan") > 20), None).otherwise(F.col("Num_of_Loan")).cast(IntegerType()),
+    )
+    df = df.withColumn("Credit_Mix", F.when(F.trim(F.col("Credit_Mix")) == "_", None).otherwise(F.col("Credit_Mix")))
+    df = df.withColumn("Payment_of_Min_Amount", F.when(F.col("Payment_of_Min_Amount") == "NM", None).otherwise(F.col("Payment_of_Min_Amount")))
+    return _write_silver(df, "financials", snapshot_date, silver_dir)
+
+
+def process_silver_loan_daily(bronze_df, snapshot_date, silver_dir):
+    df = bronze_df
+    df = (
+        df.withColumn("loan_id", F.col("loan_id").cast("string"))
+          .withColumn("Customer_ID", F.col("Customer_ID").cast("string"))
+          .withColumn("loan_start_date", F.to_date("loan_start_date"))
+          .withColumn("snapshot_date", F.to_date("snapshot_date"))
+          .withColumn("tenure", F.col("tenure").cast(IntegerType()))
+          .withColumn("installment_num", F.col("installment_num").cast(IntegerType()))
+          .withColumn("overdue_amt", F.col("overdue_amt").cast(DoubleType()))
+    )
+    for c in ["loan_amt", "due_amt", "paid_amt", "overdue_amt", "balance"]:
+        df = df.withColumn(c, F.when(F.col(c) < 0, None).otherwise(F.col(c)))
+    return _write_silver(df, "loan_daily", snapshot_date, silver_dir)
+
+
+def process_silver_clickstream(bronze_df, snapshot_date, silver_dir):
+    df = bronze_df.withColumn("Customer_ID", F.col("Customer_ID").cast("string"))
+    df = df.withColumn("snapshot_date", F.to_date("snapshot_date"))
+    return _write_silver(df, "clickstream", snapshot_date, silver_dir)
+
+
+SILVER_PROCESSORS = {
+    "attributes": process_silver_attributes,
+    "financials": process_silver_financials,
+    "loan_daily": process_silver_loan_daily,
+    "clickstream": process_silver_clickstream,
+}

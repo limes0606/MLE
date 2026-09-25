@@ -1,0 +1,9 @@
+services:
+  pyspark-notebook:
+    build: .
+    container_name: assignment1_notebook
+    ports:
+      - "8888:8888"
+    volumes:
+      - .:/home/jovyan/work
+    working_dir: /home/jovyan/work
