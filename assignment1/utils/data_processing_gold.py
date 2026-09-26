@@ -12,9 +12,24 @@ MOB_THRESHOLD = 6
 
 
 def process_gold_label_store(silver_loan_daily_all, gold_dir):
+    """
+    Label definition: bad=1 if overdue_amt > 0 at installment_num == 6
+    (fixed mob=6 checkpoint), else bad=0. All loans have tenure=10 months
+    and are fully observed, so every loan reaches mob=6 with no censoring.
+    This is a point-in-time definition, not a cumulative one: a loan
+    overdue at mob=6 but cured by mob=7 still counts as bad, and vice
+    versa -- a deliberate simplification, stated explicitly here as an
+    assumption.
+
+    silver_loan_daily_all: the UNION of all loan_daily silver snapshots
+    (read with a wildcard path), not a single monthly partition -- we need
+    every loan's row at installment_num == MOB_THRESHOLD, and different
+    loans hit that mob at different calendar snapshot_dates.
+    """
     label_store = (
         silver_loan_daily_all
         .filter(F.col("installment_num") == MOB_THRESHOLD)
+        .filter(F.col("overdue_amt").isNotNull())
         .withColumn("label", F.when(F.col("overdue_amt") > 0, 1).otherwise(0))
         .select("loan_id", "Customer_ID", "loan_start_date", "label")
     )
@@ -31,11 +46,22 @@ def process_gold_label_store(silver_loan_daily_all, gold_dir):
 
 def process_gold_feature_store(silver_attributes_all, silver_financials_all,
                                 silver_clickstream_all, gold_dir):
+    """
+    Feature store: built from attributes + financials, joined on
+    (Customer_ID, snapshot_date) -- both are captured exactly at loan
+    origination for every customer, so this join is always aligned with
+    no leakage risk. Clickstream is left-joined after filtering to rows
+    where its own snapshot_date matches the customer's loan_start_date;
+    only ~72% of customers (8,974 / 12,500) have clickstream coverage, so
+    the remaining customers keep null clickstream features rather than
+    being dropped from the feature store.
+    """
     feature_store = (
         silver_attributes_all.alias("a")
         .join(silver_financials_all.alias("f"), on=["Customer_ID", "snapshot_date"], how="inner")
-        .drop(F.col("f.snapshot_date"))
     )
+
+    feature_store = feature_store.drop("Name", "SSN")
 
     click = silver_clickstream_all.withColumnRenamed("snapshot_date", "click_snapshot_date")
     feature_store = feature_store.join(
