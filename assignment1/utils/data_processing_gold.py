@@ -26,6 +26,15 @@ def process_gold_label_store(silver_loan_daily_all, gold_dir):
     every loan's row at installment_num == MOB_THRESHOLD, and different
     loans hit that mob at different calendar snapshot_dates.
     """
+    all_loans = silver_loan_daily_all.select("loan_id", "tenure").distinct()
+    short_tenure_loans = all_loans.filter(F.col("tenure") < MOB_THRESHOLD).count()
+    if short_tenure_loans > 0:
+        print(
+            f"[gold] WARNING: {short_tenure_loans} loan(s) have tenure < {MOB_THRESHOLD} months "
+            f"and will be silently excluded from the label store (never reach the mob={MOB_THRESHOLD} "
+            f"checkpoint). The 'no censoring' assumption in this function's docstring no longer holds."
+        )
+    
     label_store = (
         silver_loan_daily_all
         .filter(F.col("installment_num") == MOB_THRESHOLD)

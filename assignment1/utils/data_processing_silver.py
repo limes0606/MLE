@@ -19,7 +19,9 @@ def _write_silver(df, table_name, snapshot_date, silver_dir):
 
 
 def _strip_to_number(colname):
-    return F.regexp_extract(F.col(colname).cast("string"), r"(-?\d+\.?\d*)", 1)
+    col = F.col(colname).cast("string")
+    candidate = F.regexp_replace(col, r"^_+|_+$", "")
+    return F.when(candidate.cast(DoubleType()).isNotNull(), candidate).otherwise(None)
 
 
 def process_silver_attributes(bronze_df, snapshot_date, silver_dir):
@@ -47,6 +49,10 @@ def process_silver_financials(bronze_df, snapshot_date, silver_dir):
     for c in NUMERIC_FINANCIAL_COLS:
         df = df.withColumn(c, _strip_to_number(c).cast(DoubleType()))
 
+    df = df.withColumn(
+        "Annual_Income",
+        F.when(F.col("Annual_Income") > 1000000, None).otherwise(F.col("Annual_Income")),
+    )
     df = df.withColumn(
         "Num_of_Loan",
         F.when((F.col("Num_of_Loan") < 0) | (F.col("Num_of_Loan") > 20), None).otherwise(F.col("Num_of_Loan")).cast(IntegerType()),
@@ -118,7 +124,9 @@ def process_silver_financials(bronze_df, snapshot_date, silver_dir):
     df = df.withColumn(
         "Num_Type_of_Loan",
         F.when(
-            F.col("Type_of_Loan").isNotNull() & (F.col("Type_of_Loan") != "Not Specified"),
+            F.col("Type_of_Loan").isNotNull()
+            & F.col("Type_of_Loan").rlike(r"^[A-Za-z\- ]+(,\s*[A-Za-z\- ]+)*$")
+            & (F.col("Type_of_Loan") != "Not Specified"),
             F.size(F.split(F.col("Type_of_Loan"), r",\s*")),
         ).otherwise(None),
     ).drop("Type_of_Loan")
