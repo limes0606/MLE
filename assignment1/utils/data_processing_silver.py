@@ -75,9 +75,30 @@ def process_silver_financials(bronze_df, snapshot_date, silver_dir):
         "Delay_from_due_date",
         F.when(F.col("Delay_from_due_date") < 0, None).otherwise(F.col("Delay_from_due_date")),
     )
+    df = df.withColumn(
+        "Monthly_Balance",
+        F.when(F.col("Monthly_Balance") < 0, None).otherwise(F.col("Monthly_Balance")),
+    )
+    df = df.withColumn(
+        "Total_EMI_per_month",
+        F.when(F.col("Total_EMI_per_month") < 0, None).otherwise(F.col("Total_EMI_per_month")),
+    )
 
-    df = df.withColumn("Credit_Mix", F.when(F.trim(F.col("Credit_Mix")) == "_", None).otherwise(F.col("Credit_Mix")))
-    df = df.withColumn("Payment_of_Min_Amount", F.when(F.col("Payment_of_Min_Amount") == "NM", None).otherwise(F.col("Payment_of_Min_Amount")))
+    df = df.withColumn(
+        "Credit_Mix",
+        F.when(F.col("Credit_Mix").isin("Good", "Standard", "Bad"), F.col("Credit_Mix")).otherwise(None),
+    )
+    df = df.withColumn(
+        "Payment_of_Min_Amount",
+        F.when(F.col("Payment_of_Min_Amount").isin("Yes", "No"), F.col("Payment_of_Min_Amount")).otherwise(None),
+    )
+    df = df.withColumn(
+        "Payment_Behaviour",
+        F.when(
+            F.col("Payment_Behaviour").rlike(r"^(Low|High)_spent_(Small|Medium|Large)_value_payments$"),
+            F.col("Payment_Behaviour"),
+        ).otherwise(None),
+    )
 
     # Credit_History_Age arrives as free text, e.g. "10 Years and 9 Months".
     # Parse into a single numeric column: total months of credit history.
@@ -114,9 +135,9 @@ def process_silver_loan_daily(bronze_df, snapshot_date, silver_dir):
           .withColumn("snapshot_date", F.to_date("snapshot_date"))
           .withColumn("tenure", F.col("tenure").cast(IntegerType()))
           .withColumn("installment_num", F.col("installment_num").cast(IntegerType()))
-          .withColumn("overdue_amt", F.col("overdue_amt").cast(DoubleType()))
     )
     for c in ["loan_amt", "due_amt", "paid_amt", "overdue_amt", "balance"]:
+        df = df.withColumn(c, F.col(c).cast(DoubleType()))
         df = df.withColumn(c, F.when(F.col(c) < 0, None).otherwise(F.col(c)))
     return _write_silver(df, "loan_daily", snapshot_date, silver_dir)
 

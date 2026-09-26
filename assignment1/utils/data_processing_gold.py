@@ -55,6 +55,10 @@ def process_gold_feature_store(silver_attributes_all, silver_financials_all,
     only ~72% of customers (8,974 / 12,500) have clickstream coverage, so
     the remaining customers keep null clickstream features rather than
     being dropped from the feature store.
+
+    Name and SSN are dropped here, at gold -- bronze and silver intentionally
+    retain them, consistent with bronze being a raw landing zone and silver
+    only handling type/value conformance, not business-level curation.
     """
     feature_store = (
         silver_attributes_all.alias("a")
