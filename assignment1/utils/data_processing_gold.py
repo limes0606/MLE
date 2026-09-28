@@ -8,14 +8,14 @@ from attributes + financials + origination-date clickstream).
 import os
 import pyspark.sql.functions as F
 
-MOB_THRESHOLD = 6
+MOB_THRESHOLD = 5
 
 
 def process_gold_label_store(silver_loan_daily_all, gold_dir):
     """
-    Label definition: bad=1 if overdue_amt > 0 at installment_num == 6
-    (fixed mob=6 checkpoint), else bad=0. All loans have tenure=10 months
-    and are fully observed, so every loan reaches mob=6 with no censoring.
+    Label definition: bad=1 if overdue_amt > 0 at installment_num == 5
+    (fixed mob=5 checkpoint), else bad=0. All loans have tenure=10 months
+    and are fully observed, so every loan reaches mob=5 with no censoring.
     This is a point-in-time definition, not a cumulative one: a loan
     overdue at mob=6 but cured by mob=7 still counts as bad, and vice
     versa -- a deliberate simplification, stated explicitly here as an

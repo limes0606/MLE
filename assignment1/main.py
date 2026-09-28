@@ -54,7 +54,7 @@ def main():
     os.makedirs(DATAMART_DIR, exist_ok=True)
 
     print(f"Label definition in effect: bad=1 if overdue_amt > 0 at "
-          f"installment_num == {MOB_THRESHOLD} (mob=6 fixed checkpoint).")
+          f"installment_num == {MOB_THRESHOLD} (mob={MOB_THRESHOLD} fixed checkpoint).")
 
     for table_name in ["clickstream", "loan_daily", "financials", "attributes"]:
         run_bronze_silver(spark, table_name)
