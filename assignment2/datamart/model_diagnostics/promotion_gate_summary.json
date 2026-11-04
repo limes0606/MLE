@@ -1,0 +1,24 @@
+{
+ "eval_loans": 2478,
+ "eval_cohorts": [
+  "2024-09",
+  "2024-10",
+  "2024-11",
+  "2024-12",
+  "2025-01"
+ ],
+ "champion_auc": 0.8124566998516579,
+ "retrained_auc": 0.8180039692644734,
+ "final_look_lift_se": 0.0029,
+ "retrain_resample_lift_sd": 0.0037506918901947166,
+ "retrain_resample_lift_mean": -0.00737,
+ "seed_only_lift_sd": 0.0012518327479003465,
+ "swap_null_sd": 0.0030210836753823828,
+ "swap_null_p_lift_ge_0.010": 0.001,
+ "min_true_lift_for_80pct_power": 0.012436,
+ "value_per_1000_applicants_per_0.01_auc": {
+  "650": 9178.283419630645,
+  "1500": 18379.870163661297,
+  "3000": 40322.89424308372
+ }
+}

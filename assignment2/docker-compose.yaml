@@ -1,0 +1,57 @@
+# Airflow (SequentialExecutor + SQLite), same pattern as Lab 5.
+# Open http://localhost:8080  (user: admin / password: admin)
+
+x-airflow-common: &airflow-common
+  image: ml-airflow:2.6.1   # one shared image; built once by the init service
+  environment:
+    - AIRFLOW__CORE__EXECUTOR=SequentialExecutor
+    - AIRFLOW__CORE__FERNET_KEY=PAqBeGJLJTYFzVkOGHWIYXdLO7XdXz5yTdxAGJe9ezM=
+    - AIRFLOW__CORE__LOAD_EXAMPLES=False
+    - AIRFLOW__CORE__DAGBAG_IMPORT_TIMEOUT=60
+    - AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION=False
+  volumes:
+    - airflow_data:/opt/airflow
+    - ./dags:/opt/airflow/dags
+    - ./scripts:/opt/airflow/scripts
+    - ./utils:/opt/airflow/utils
+    - ./data:/opt/airflow/data
+    - ./datamart:/opt/airflow/datamart
+    - ./model_bank:/opt/airflow/model_bank
+
+services:
+  # Makes the mounted folders writable for the airflow user (uid 50000) on Linux hosts.
+  fix-permissions:
+    <<: *airflow-common
+    build: .
+    user: "0:0"
+    entrypoint: >
+      /bin/bash -c "mkdir -p /opt/airflow/datamart /opt/airflow/model_bank /opt/airflow/data &&
+      chmod -R a+rwX /opt/airflow/datamart /opt/airflow/model_bank /opt/airflow/data || true"
+
+  airflow-init:
+    <<: *airflow-common
+    depends_on:
+      fix-permissions:
+        condition: service_completed_successfully
+    entrypoint: >
+      /bin/bash -c "airflow db init &&
+      (airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com || true)"
+
+  airflow-webserver:
+    <<: *airflow-common
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+    ports:
+      - "8080:8080"
+    command: webserver
+
+  airflow-scheduler:
+    <<: *airflow-common
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+    command: scheduler
+
+volumes:
+  airflow_data:

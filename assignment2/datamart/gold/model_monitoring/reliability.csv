@@ -1,0 +1,16 @@
+g,n,raw,calibrated,actual,set
+0,452,0.0372,0.038,0.0354,all live cohorts
+1,451,0.0823,0.0839,0.0931,all live cohorts
+2,452,0.1054,0.1073,0.1217,all live cohorts
+3,451,0.1277,0.1299,0.1308,all live cohorts
+4,452,0.154,0.1565,0.1504,all live cohorts
+5,451,0.1976,0.2005,0.1796,all live cohorts
+6,451,0.301,0.3045,0.3171,all live cohorts
+7,452,0.4543,0.458,0.5022,all live cohorts
+8,451,0.6186,0.6217,0.6519,all live cohorts
+9,452,0.7622,0.7643,0.7301,all live cohorts
+0,106,0.0592,0.0605,0.1226,latest cohort 2025-01
+1,105,0.1155,0.1176,0.1333,latest cohort 2025-01
+2,105,0.1737,0.1765,0.1143,latest cohort 2025-01
+3,105,0.3894,0.3929,0.381,latest cohort 2025-01
+4,105,0.7039,0.7063,0.5905,latest cohort 2025-01

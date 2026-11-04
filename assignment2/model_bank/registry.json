@@ -1,0 +1,104 @@
+{
+  "models": [
+    {
+      "model_id": "credit_model_2024_05_01",
+      "file": "credit_model_2024_05_01.pkl",
+      "algorithm": "xgboost",
+      "trained_asof": "2024-05-01",
+      "status": "champion",
+      "selection_rule": "highest pooled walk-forward AUC (no champion yet)",
+      "best_by_auc": "xgboost",
+      "training_window": {
+        "origination_from": "2023-01-01",
+        "origination_to": "2023-12-01",
+        "n_loans": 5958,
+        "bad_rate": 0.28298086606243705
+      },
+      "baseline": {
+        "auc": 0.8036037585383689,
+        "auc_ci_low": 0.7887885379124818,
+        "auc_ci_high": 0.818117981183377,
+        "gini": 0.6072075170767377,
+        "ks": 0.496316622207275,
+        "brier": 0.14966186055611458,
+        "monthly_auc_mean": 0.8042263036896522,
+        "monthly_auc_sd": 0.021976898318431127,
+        "band_low": 0.7602725070527899,
+        "band_high": 0.8481801003265145,
+        "n_months": 9
+      },
+      "candidate_auc": {
+        "logreg": 0.765,
+        "random_forest": 0.797,
+        "xgboost": 0.8036
+      },
+      "candidate_fold_auc": {
+        "logreg": [
+          0.7689,
+          0.7535,
+          0.7724
+        ],
+        "random_forest": [
+          0.7996,
+          0.7992,
+          0.7975
+        ],
+        "xgboost": [
+          0.8011,
+          0.804,
+          0.8069
+        ]
+      }
+    },
+    {
+      "model_id": "credit_model_2025_01_01",
+      "file": "credit_model_2025_01_01.pkl",
+      "algorithm": "xgboost",
+      "trained_asof": "2025-01-01",
+      "status": "challenger",
+      "selection_rule": "scheduled retrain: same algorithm as champion credit_model_2024_05_01, refitted on newer data",
+      "best_by_auc": "xgboost",
+      "training_window": {
+        "origination_from": "2023-01-01",
+        "origination_to": "2024-08-01",
+        "n_loans": 10022,
+        "bad_rate": 0.2902614248652963
+      },
+      "baseline": {
+        "auc": 0.8084442893753724,
+        "auc_ci_low": 0.7959709896830416,
+        "auc_ci_high": 0.8222352391783915,
+        "gini": 0.6168885787507448,
+        "ks": 0.5101970125088543,
+        "brier": 0.15528496955474694,
+        "monthly_auc_mean": 0.8085442008425628,
+        "monthly_auc_sd": 0.01475682399425472,
+        "band_low": 0.7790305528540534,
+        "band_high": 0.8380578488310723,
+        "n_months": 9
+      },
+      "candidate_auc": {
+        "logreg": 0.7599,
+        "random_forest": 0.7951,
+        "xgboost": 0.8084
+      },
+      "candidate_fold_auc": {
+        "logreg": [
+          0.7605,
+          0.7628,
+          0.7567
+        ],
+        "random_forest": [
+          0.7943,
+          0.7861,
+          0.8055
+        ],
+        "xgboost": [
+          0.8136,
+          0.7994,
+          0.8125
+        ]
+      }
+    }
+  ]
+}

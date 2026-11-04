@@ -1,0 +1,31 @@
+evidence,check,result,detail
+VERIFIED,label store: no null key or label values,PASS,"0 rows with a null loan_id, Customer_ID, loan_start_date or label"
+VERIFIED,label store: loan_id unique,PASS,"12500 label rows, 12500 unique loan_id"
+VERIFIED,"label store: (Customer_ID, loan_start_date) key unique",PASS,0 duplicate keys
+VERIFIED,ledger: at most one instalment-5 row per loan,PASS,12500 of 12500 loans reach instalment 5; 0 duplicates
+VERIFIED,ledger instalment-5 rows: no null loan_id or date,PASS,0 rows with a null key
+VERIFIED,ledger: overdue_amt present at instalment 5,PASS,0 loans with a missing amount
+VERIFIED,"stored label = (overdue_amt > 0 at instalment 5) recomputed from the raw ledger, valid amounts only",PASS,12500 stored labels; 0 mismatches; 0 labels without a valid ledger instalment-5 amount
+VERIFIED,label timing: each label partition holds only loans started 5 months earlier,PASS,25 partitions; 0 loans in the wrong partition
+VERIFIED,feature store: no null key values,PASS,0 rows with a null Customer_ID or snapshot_date
+VERIFIED,"feature store: (Customer_ID, snapshot_date) key unique",PASS,12500 rows; 0 duplicate keys
+VERIFIED,every label has exactly one feature row,PASS,12500 of 12500 labels matched a feature row; 0 labels without features
+VERIFIED,every feature row that should be mature has a label,PASS,0 mature feature rows without a label; 0 feature rows not yet mature at the audit date (expected)
+VERIFIED,joined snapshot_date = loan_start_date on every matched row,PASS,12500 rows checked. This confirms the recorded date only; that each source value really existed at application time needs source lineage (REVIEW item below)
+VERIFIED,predictions: no null key values,PASS,"0 rows with a null loan_id, Customer_ID, snapshot_date or model_id"
+VERIFIED,predictions: loan_id unique,PASS,"4515 predictions, 4515 unique"
+VERIFIED,every prediction's model_id exists in the registry,PASS,models used: ['credit_model_2024_05_01']
+VERIFIED,no prediction was made by a model trained after the scoring date,PASS,0 of 4515 predictions earlier than their model's training date
+VERIFIED,every mature prediction cohort matches a label,PASS,all mature cohorts fully matched
+VERIFIED,credit_model_2024_05_01: last training origination had a known label on the training date,PASS,"last origination 2023-12, label known 2024-05-01, trained as of 2024-05-01"
+VERIFIED,credit_model_2025_01_01: last training origination had a known label on the training date,PASS,"last origination 2024-08, label known 2025-01-01, trained as of 2025-01-01"
+VERIFIED,no repayment-ledger column or label among the model inputs,PASS,22 inputs
+VERIFIED,clickstream columns are not model inputs,PASS,clickstream is monitored for coverage only
+SCREEN,highest single-input AUC against the label (numeric inputs one at a time),INFO,"Outstanding_Debt 0.728, Interest_Rate 0.721, Num_Credit_Inquiries 0.708. A very high value would be a warning sign; a low one does not rule out leakage through combinations, categorical inputs or other paths"
+KNOWN LIMITATION,"unpurged walk-forward folds, selection as of 2024-05-01",INFO,training loans whose label was not yet known when each fold began: 1537 / 2054 / 1923 (folds 1 / 2 / 3). Not removed because purging leaves too few training loans; applied equally to every candidate
+KNOWN LIMITATION,"unpurged walk-forward folds, selection as of 2025-01-01",INFO,training loans whose label was not yet known when each fold began: 1913 / 1983 / 2033 (folds 1 / 2 / 3). Not removed because purging leaves too few training loans; applied equally to every candidate
+REVIEW,"imputers, scalers and encoders are fitted inside the model pipeline (training split only)",INFO,"pipeline steps: pre -> model; code review, not a data test"
+REVIEW,calibrator and score-PSI reference use shuffled five-fold out-of-fold scores on the training loans,INFO,"design fact from train_and_select.py; shuffled folds are not a time-forward calibration test, so calibration on a later period is checked only through the monitoring reliability results"
+REVIEW,feature-PSI references are the training feature values themselves,INFO,design fact from train_and_select.py
+REVIEW,each source value was available at application time,INFO,needs source lineage from the data owner; the snapshot-date check confirms recorded dates only
+REVIEW,the sealed backtest block and later cohorts were reused for model comparisons,INFO,no untouched holdout exists; later analyses are post hoc

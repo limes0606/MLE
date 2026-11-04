@@ -1,0 +1,17 @@
+limit,baseline,false_alarm_share_of_series_within_22_runs
+0.01,baseline known exactly,0.773
+0.01,baseline with estimation error,0.707
+0.015,baseline known exactly,0.522
+0.015,baseline with estimation error,0.5
+0.02,baseline known exactly,0.25
+0.02,baseline with estimation error,0.309
+0.025,baseline known exactly,0.105
+0.025,baseline with estimation error,0.174
+0.03,baseline known exactly,0.039
+0.03,baseline with estimation error,0.079
+0.04,baseline known exactly,0.001
+0.04,baseline with estimation error,0.012
+0.05,baseline known exactly,0.0
+0.05,baseline with estimation error,0.001
+0.06,baseline known exactly,0.0
+0.06,baseline with estimation error,0.0

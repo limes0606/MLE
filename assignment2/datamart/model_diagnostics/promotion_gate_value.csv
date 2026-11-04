@@ -1,0 +1,6 @@
+model,auc_eval,value_per_1000_margin650,value_per_1000_margin1500,value_per_1000_margin3000
+logreg,0.7717,11549,239626,967680
+random_forest,0.8042,22924,302153,1132914
+xgboost,0.8125,51341,301567,1142137
+challenger_retrained,0.818,51714,340646,1141175
+champion,0.8125,51341,301567,1142137
